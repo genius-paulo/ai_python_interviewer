@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "ai-interviwer"
+version = "0.1.0"
+description = ""
+authors = ["genius-paulo"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "3.10.11"
+httpx = "^0.28.1"
+python-dotenv = "^1.0.1"
+pydantic-settings = "^2.7.0"
+pydantic = "^2.10.4"
+gigachat = "^0.1.36"
+aiogram = "2.25"
+loguru = "^0.7.3"
+flake8 = "^7.1.1"
+black = "^24.10.0"
+peewee = "^3.17.8"
+peewee-async = "^1.0.0"
+aiopg = "^1.4.0"
+pytest = "^8.3.4"
+pytest-asyncio = "^0.25.0"
+pytest-cov = "^6.0.0"
+matplotlib = "^3.10.0"
+numpy = "^2.2.1"
+scalene = "^1.5.49"
+pyinstrument = "^5.0.0"
+redis = "^5.2.1"
+aioredis = "^2.0.1"
+certifi = "^2024.12.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
