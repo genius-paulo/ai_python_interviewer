@@ -40,6 +40,7 @@ class Modes(BaseModel):
 
 class Stickers(BaseModel):
     """Модель стикеров из Telegram, поделенных на категории: грустные, нейтральные, веселые"""
+    confused: list = ['CAACAgIAAxkBAAENnuVnknzx-6kFBJpym9f456qv8WUPqQAC0zgAArKxKUl-sdU_kWsCkTYE']
     sad: list = ['CAACAgIAAxkBAAENeRdngR-0D0fsvNtuvVMkyTUwnG8tdQACY0MAAl4qaUhBsrEwZuLtSjYE',
                  'CAACAgIAAxkBAAENeRlngR_9Nz7usxNa92imry4U00dYyAACoUYAAspVYUgfCcVI2EJH8jYE',
                  'CAACAgIAAxkBAAENeRtngSAdpJUdQa-CknA0jP2C5tCLiAACMEAAAkVDYUhJgUe8OF4vMDYE']
@@ -50,6 +51,11 @@ class Stickers(BaseModel):
                    'CAACAgIAAxkBAAENeSVngSDBXkJLjkA5eJH26qKtYQMDuwACJD8AAlUDaEgBW9n4mcteezYE',
                    'CAACAgIAAxkBAAENeSdngSDNsUfvkoBsvuZJgHFTV5IG1gACyUYAAnZZYUi17hfzGM_6FjYE',
                    'CAACAgIAAxkBAAENeSlngSEBa8HGVwoSuTH58P8cYDTQqgACKkcAAmHaaEirAAENkFgUrmg2BA']
+
+    @classmethod
+    def get_confused_sticker(cls):
+        logger.debug('Возвращаем растерянный стикер из категории confused')
+        return random.choice(cls().confused)
 
     @classmethod
     def get_sad_sticker(cls):

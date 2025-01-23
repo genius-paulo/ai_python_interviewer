@@ -5,10 +5,25 @@ from src.config import settings
 from src.bot.handlers import register_handlers
 from src.db import db, models
 from loguru import logger
-
-
 # TODO: Нужно реализовать нормальное логгирование и мониторинг показателей,
 #  сейчас надеюсь на чудо
+
+
+class CustomDispatcher(Dispatcher):
+    async def _process_polling_updates(self, updates, fast):
+        try:
+            return await super()._process_polling_updates(updates, fast)
+        except Exception as e:
+            logger.exception("Ошибка при обработке update:")
+            # Отправляем сообщение об ошибке администратору
+            for update in updates:
+                if update.message:
+                    text = (f"У пользователя {update.message.from_user.username} "
+                            f"(id: {update.message.from_user.id}) произошла ошибка: {e}")
+                    logger.info(f'Отправляем сообщение об ошибке администратору: {text}')
+                    await self.bot.send_message(settings.admin_chat_id,
+                                                text)
+
 
 # Инициализируем бота
 bot = Bot(token=settings.tg_token)
@@ -16,8 +31,9 @@ bot = Bot(token=settings.tg_token)
 storage = MemoryStorage()
 logger.info(f'Инициализировали объект памяти для состояний: {bot}')
 # Инициализируем диспетчер
-dp = Dispatcher(bot, storage=storage)
+dp = CustomDispatcher(bot, storage=storage)
 logger.info(f'Инициализировали диспетчер: {bot}')
+
 
 
 async def main():

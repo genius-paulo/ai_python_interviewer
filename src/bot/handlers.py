@@ -73,7 +73,7 @@ async def get_question(message: types.Message, state: FSMContext):
         #  желательно сделать так, чтобы вопросы не повторялись
         question=user_skill_obj.get_random_question())
 
-    logger.info(f'Создали историю чата вопрос: {history_chat.model_dump()}')
+    logger.info(f'Создали историю чата для пользователя {message.from_user.username} ({message.from_user.id}): {history_chat.model_dump()}')
 
     # Передаем объект истории в состояние
     async with state.proxy() as data:
@@ -92,7 +92,8 @@ async def get_question(message: types.Message, state: FSMContext):
 
 async def get_answer_the_question(callback_query: types.CallbackQuery, state: FSMContext):
     """Дополняем сообщение ответом"""
-    logger.info('Дополняем сообщение ответом.')
+    logger.info(f'Дополняем сообщение ответом для пользователя '
+                f'{callback_query.from_user.username} ({callback_query.from_user.id}).')
     # Получаем пользователя из history_chat
     async with (state.proxy() as data):
         history_chat = data['history_chat']
@@ -103,14 +104,17 @@ async def get_answer_the_question(callback_query: types.CallbackQuery, state: FS
                                                parse_mode=types.ParseMode.HTML,
                                                reply_markup=types.InlineKeyboardMarkup())
 
-        logger.debug(f'Пользователь хочет платную подсказку. У него есть подписка? {user_is_paid}')
+        logger.debug(f'Пользователь {callback_query.from_user.username} '
+                     f'({callback_query.from_user.id}) хочет платную подсказку. '
+                     f'У него есть подписка? {user_is_paid}')
         # меняем сообщение в зависимости от статуса подписки
         await get_paid_hint(callback_query, user_is_paid)
 
 
 async def recreate_question(message: types.Message, state: FSMContext):
     """Пересоздаем вопрос"""
-    logger.info('Пересоздаем вопрос')
+    logger.info(f'Пересоздаем вопрос '
+                f'для пользователя {message.from_user.username} ({message.from_user.id})')
     await state.finish()
     await get_question(message, state)
 
@@ -119,37 +123,54 @@ async def process_question(message: types.Message, state: FSMContext):
     """Обрабатываем ответ на вопрос"""
     # Получаем объект истории чата
     async with (state.proxy() as data):
-        history_chat = data['history_chat']
+        try:
+            history_chat = data['history_chat']
 
-        # Дополняем промпт ответом пользователя
-        history_chat.answer = message.text
-        logger.info(f'Пользователь ответил: {history_chat.answer} на вопрос ИИ: {history_chat.question}')
-        final_prompt = history_chat.get_final_prompt()
+            # Дополняем промпт ответом пользователя
+            history_chat.answer = message.text
+            logger.info(f'Пользователь {message.from_user.username} ({message.from_user.id}) ответил: '
+                        f'{history_chat.answer} на вопрос ИИ: {history_chat.question}')
+            final_prompt = history_chat.get_final_prompt()
+            logger.info(f'Получили финальный промпт для пользователя '
+                        f'{message.from_user.username} ({message.from_user.id})')
 
-        # Получаем оценку ответа от нейросети
-        ai_answer = await giga_chat.get_assessment_of_answer(final_prompt)
-        # Рассчитываем экспоненциальное сглаживание,
-        # получаем финальную оценку, чтобы именно ее вставить в базу
-        ai_answer_score = utils.parse_score_from_ai_answer(ai_answer)
-        expo_score = utils.get_new_skill_rating(current_rating=history_chat.score,
-                                                new_score=ai_answer_score)
-        # Забиваем оценку в базу
-        await db.update_skill_rating(tg_id=message.from_user.id,
-                                     skill=history_chat.skill.short_name,
-                                     rating=expo_score)
+            # Получаем оценку ответа от нейросети
+            # TODO: Функция иногда отдает ошибку,
+            #  тогда юзер получает понижение, нужно исправить
+            ai_answer = await giga_chat.get_assessment_of_answer(final_prompt)
+            # Рассчитываем экспоненциальное сглаживание,
+            # получаем финальную оценку, чтобы именно ее вставить в базу
+            ai_answer_score = utils.parse_score_from_ai_answer(ai_answer)
+            logger.info(f'Получили оценку от нейросети: {ai_answer_score}')
+            expo_score = utils.get_new_skill_rating(current_rating=history_chat.score,
+                                                    new_score=ai_answer_score)
+            # Забиваем оценку в базу
+            await db.update_skill_rating(tg_id=message.from_user.id,
+                                         skill=history_chat.skill.short_name,
+                                         rating=expo_score)
 
-        # Отсылаем стикер в зависимости от оценки:
-        # маленькая — грустный, большая — веселый
-        await message.answer_sticker(sticker=utils.get_sticker_by_score(ai_answer_score))
+            # Отсылаем стикер в зависимости от оценки
+            await message.answer_sticker(sticker=utils.get_sticker_by_score(ai_answer_score))
 
-        # Создаем финальное сообщение с изменением оценки
-        final_text = actual_texts.ai_answer.format(ai_answer=ai_answer,
-                                                   old_score=history_chat.score,
-                                                   new_score=expo_score)
-        await message.answer(final_text, reply_markup=await main_keyboard())
+            # Создаем финальное сообщение с изменением оценки
+            final_text = actual_texts.ai_answer.format(ai_answer=ai_answer,
+                                                       old_score=history_chat.score,
+                                                       new_score=expo_score)
+            await message.answer(final_text, reply_markup=await main_keyboard())
+            # Завершаем состояния
+            await state.finish()
 
-        # Завершаем состояния
-        await state.finish()
+        except Exception as e:
+            logger.error(f'Ошибка при получении оценки от нейросети: {e}. Берем среднюю оценку, чтобы не портить результат.')
+            # Отсылаем стикер в зависимости от оценки:
+            # маленькая — грустный, большая — веселый
+            await message.answer_sticker(sticker=utils.basics.Stickers().get_confused_sticker())
+            final_text = ('Ответ сбил с толку AI-интервьюера. Он все обдумает и вернется позже.'
+                          '\n\nА пока попробуй сгенерировать новый вопрос :)')
+            await message.answer(final_text, reply_markup=await main_keyboard())
+            # Завершаем состояния
+            await state.finish()
+            raise e
 
 
 async def start_payment(message: types.Message, state: FSMContext):

@@ -49,8 +49,8 @@ def parse_score_from_ai_answer(answer: str) -> int:
     if match:
         score = int(match.group(1).split('/')[0])
     else:
-        score = 1
-    logger.info(f'Парсим оценку из ответа нейросети: {score}')
+        raise ValueError("Оценка не найдена в ответе нейросети")
+    logger.info(f'Спарсили оценку из ответа нейросети: {score}')
     return score
 
 
