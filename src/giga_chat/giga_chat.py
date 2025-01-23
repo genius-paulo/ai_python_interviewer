@@ -24,11 +24,15 @@ class AIInterviewer:
         self.max_tokens = max_tokens
 
     async def send_request(self):
-        response = await self.model.achat({
-            "messages": self.messages,
-            "max_tokens": self.max_tokens
-        })
-        return response
+        try:
+            response = await self.model.achat({
+                "messages": self.messages,
+                "max_tokens": self.max_tokens
+            })
+            return response
+        except Exception as e:
+            logger.error(f'GigaChat выдал ошибку: {e}.')
+            raise e
 
 
 # TODO: Тоже сильно привязываемся к конкретной авторизации, исправить
@@ -44,7 +48,7 @@ class XTRInvoiceOneMonth:
         self.payload = payload
         self.currency = 'XTR'
         self.provider_token = ''
-        self.prices = [types.LabeledPrice(label='Подписка AI+ на 1 мес.', amount=100)]
+        self.prices = [types.LabeledPrice(label='Подписка AI+ на 1 мес.', amount=25)]
 
     async def send(self, bot):
         await bot.send_invoice(
@@ -65,11 +69,9 @@ async def get_assessment_of_answer(final_prompt: str) -> str:
     interviewer = AIInterviewer(final_prompt=final_prompt)
     try:
         response = await interviewer.send_request()
-        logger.debug(f'Получаем ответ от GigaChat: {response}')
     except Exception as e:
-        logger.error(f'GigaChat выдал ошибку: {e}.')
-        # TODO: Нужно положить в это в тексты
-        return f'AI заглючил и не смог обработать ответ: {e}. Попробуй сгенерировать вопрос еще раз.'
+        logger.error(f'GigaChat пытался обработать ответ и выдал ошибку: {e}.')
+        raise e
 
     return response.choices[0].message.content
 

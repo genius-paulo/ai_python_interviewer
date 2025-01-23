@@ -18,7 +18,11 @@ https://t.me/pyainter_bot
 `docker run --name pg-container -e POSTGRES_DB=inter_db -e POSTGRES_USER=inter_user -e POSTGRES_PASSWORD=inter_password -p 5432:5432 -d postgres:15`
 3. Запустить контейнер Redis:
 `docker run -d -p 6379:6379 --name redis_local redis_local`
-4. Запустить main.py, можно прямо из консоли
+4. Скачать сертификат Минцифры (на Mac):
+`curl -k "https://gu-st.ru/content/Other/doc/russian_trusted_root_ca.cer" -o russian_trusted_root_ca.cer`
+5. Установить сертификат:
+`cat russian_trusted_root_ca.cer >> $(python -m certifi)`
+6. Запустить main.py, можно прямо из консоли
 
 ### Профилирование кода
 1. Для проверки асинхронности можно запустить `pyinstrument`:
