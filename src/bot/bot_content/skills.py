@@ -21,9 +21,9 @@ class Skills(BaseModel):
     def get_skill_by_name(cls, skill_name) -> T:
         """Функция нужна для того, чтобы получать скилл по атрибуту short_name"""
         skill_classes_list = cls.get_all_skills()
-        for skill in skill_classes_list:
-            if skill().short_name == skill_name:
-                return skill()
+        for class_skill in skill_classes_list:
+            if class_skill().short_name == skill_name:
+                return class_skill()
         raise AttributeError
 
     @classmethod

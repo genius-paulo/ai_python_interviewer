@@ -31,6 +31,11 @@ async def get_user(tg_id: int):
     return user
 
 
+async def get_users() -> list[Users]:
+    all_users = Users.select()
+    return all_users
+
+
 async def create_user(tg_id: int):
     # Создаем пользователя
     user = Users(tg_id=tg_id)
@@ -69,9 +74,13 @@ async def update_skill_rating(tg_id: int, skill: str, rating: int):
     setattr(user, skill, rating)
     user.save()
     # TODO: Нужно ли как-то отделить логику бд от кэша в одном интерфейсе?
-    image_cache_key = get_skill_map_name(user, mode='key')
-    await cache.delete(image_cache_key)
-    logger.debug(f'Оценка скилла обновлена, кэш карты скиллов удален')
+    try:
+        image_cache_key = get_skill_map_name(user, mode='key')
+        await cache.delete(image_cache_key)
+    except Exception as e:
+        # TODO: Подумать над  одной точкой обработки ошибок в Redis. Так работает, но никуда не годится
+        logger.error(f'Ошибка при удалении кэша карты скиллов: {e}')
+    logger.debug('Оценка скилла обновлена, кэш карты скиллов удален')
 
 
 async def update_subscription(tg_id: int, days_count: int = 31) -> Subscriptions:

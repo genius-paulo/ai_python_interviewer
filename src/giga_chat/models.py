@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 from src.bot.bot_content import skills
-from src.db.models import Users
-from loguru import logger
 
 
 class MiddlePythonInterviewerChat(BaseModel):

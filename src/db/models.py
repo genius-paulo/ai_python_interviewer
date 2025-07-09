@@ -22,7 +22,6 @@ class Users(DBModel):
                             default=basics.Modes().all)
     skill = peewee.TextField(default=skills.Basic().short_name)
 
-
     # Оценки скиллов
     basic = peewee.FloatField(default=0.0)
     oop = peewee.FloatField(default=0.0)
@@ -52,8 +51,3 @@ class Subscriptions(DBModel):
 
     class Meta:
         database = database_proxy
-
-
-
-
-

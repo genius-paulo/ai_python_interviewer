@@ -51,8 +51,8 @@ actual_texts = VariousBotText(
                  f'✨ /{Commands.get_subscribe_command}, чтобы получить все возможности AI+ и поддержать проект.\n\n'
                  f'Если что-то пошло не так, пиши @genius_paulo.',
 
-    cancel_all=f'Окей, отменяем.'
-               f'\n\nЕсли захочешь продолжить, нажми:\n',
+    cancel_all='Окей, отменяем.'
+               '\n\nЕсли захочешь продолжить, нажми:\n',
 
     get_question_skill='Вопрос на тему: {skill}',
 

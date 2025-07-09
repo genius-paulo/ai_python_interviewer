@@ -2,7 +2,7 @@ import io
 from loguru import logger
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, Command
+from aiogram.dispatcher.filters import Text
 from aiogram.types.message import ContentType
 
 from src.bot.states import Form, PaymentStates
@@ -26,8 +26,6 @@ from src.db import db
 from src.bot import utils
 from src.db.cache.cache import cache
 
-# TODO: Нужно разделить функции в хэнделерах по категориям и вынести,
-#  сейчас они все намешаны здесь, их тяжело читать и поддерживать
 
 async def start(message: types.Message, state: FSMContext):
     """Отправляем стартовое сообщение"""
@@ -212,7 +210,6 @@ async def process_successful_payment(message: types.Message, state: FSMContext):
     user_subscription = await db.update_subscription(user_id, days_count=31)
 
     # Отправляем радостный стикер
-    # TODO: Это тупой костыль, надо исправить (заменить получение стикера на что-то, не относящееся к оценке)
     await message.answer_sticker(sticker=utils.get_sticker_by_score(10))
 
     # Сообщаем пользователю о новой дате подписки в формате день, месяц, год, где месяц написан текстом
@@ -295,7 +292,14 @@ async def get_profile(message: types.Message):
     image_filename = utils.get_skill_map_name(user, mode='file')
 
     # Проверяем наличие кэша в Redis
-    file_id = await cache.get(image_cache_key)
+    file_id = None
+    try:
+        file_id = await cache.get(image_cache_key)
+    except Exception as e:
+        # TODO: Подумать над  одной точкой обработки ошибок в Redis. Так работает, но никуда не годится
+        await message.bot.send_message(chat_id=settings.admin_chat_id,
+                                       text=f"У пользователя @{message.from_user.username} (id: {message.from_user.id}"
+                                            f" проблемы с кэшем: {e}")
 
     # Создаем текст сообщения
     final_text = actual_texts.profile.format(average_score=average_score,
@@ -317,7 +321,12 @@ async def get_profile(message: types.Message):
         # Получаем идентификатор файла
         file_id = msg.photo[-1].file_id
         # Сохраняем идентификатор файла в Redis
-        await cache.set(image_cache_key, file_id)
+        try:
+            await cache.set(image_cache_key, file_id)
+        except Exception as e:
+            await message.bot.send_message(chat_id=settings.admin_chat_id,
+                                           text=f"У пользователя @{message.from_user.username} (id: {message.from_user.id}"
+                                                f" проблемы с кэшем: {e}")
     else:
         logger.debug(f"Отправляем кэш карты навыков: {file_id.decode('utf-8')}")
         # Отправляем файл пользователю

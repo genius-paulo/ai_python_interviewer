@@ -83,4 +83,3 @@ class User(BaseModel):
 class SubscriptionStatus(BaseModel):
     active: str = 'active'
     inactive: str = 'inactive'
-

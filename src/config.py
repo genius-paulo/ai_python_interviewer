@@ -25,6 +25,7 @@ class Settings(BaseSettingsWithConfig):
     max_tokens_assessment: int
     max_tokens_answer: int
     alpha_coefficient: float
+    max_request_attempts: int
 
     # Креды Telegram
     tg_token: str

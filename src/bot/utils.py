@@ -11,8 +11,6 @@ from src.db import db
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
-import uuid
-import os
 
 
 async def get_skill_by_category(user: db.Users) -> skills.Skills:

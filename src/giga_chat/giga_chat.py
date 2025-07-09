@@ -1,8 +1,9 @@
 import certifi
+import asyncio
 from gigachat import GigaChat
 from src.config import settings
 from loguru import logger
-from aiogram import Bot, types
+from aiogram import types
 
 
 # TODO: Здесь нужна фабрика, чтобы уйти от конкретной реализации
@@ -24,15 +25,20 @@ class AIInterviewer:
         self.max_tokens = max_tokens
 
     async def send_request(self):
-        try:
-            response = await self.model.achat({
-                "messages": self.messages,
-                "max_tokens": self.max_tokens
-            })
-            return response
-        except Exception as e:
-            logger.error(f'GigaChat выдал ошибку: {e}.')
-            raise e
+        # Делаем несколько попыток в случае исключения и получения "status":429,"message":"Too Many Requests"
+        for attempt in range(settings.max_request_attempts):
+            try:
+                response = await self.model.achat({
+                    "messages": self.messages,
+                    "max_tokens": self.max_tokens
+                })
+                return response
+            except Exception as e:
+                logger.error(f"Попытка {attempt + 1}/{settings.max_request_attempts} запроса к GigaChat не удалась: {e}.")
+                if attempt == settings.max_request_attempts - 1:
+                    logger.error(f'GigaChat выдал ошибку: {e}.')
+                    raise e
+                await asyncio.sleep(1)
 
 
 # TODO: Тоже сильно привязываемся к конкретной авторизации, исправить
