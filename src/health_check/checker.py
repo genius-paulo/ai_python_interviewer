@@ -42,7 +42,7 @@ async def send_health_check(bot: Bot):
         logger.error("База данных не работает")
         status.append(f"❌ База данных не работает: {e}")
 
-    await bot.send_message(settings.admin_chat_id, "📅 Ежедневный health-check:\n" + "\n".join(status))
+    await bot.send_message(settings.admin_chat_id, "📅 Регулярный health-check:\n" + "\n".join(status))
     logger.info("Health-check сообщение отправлено")
 
 

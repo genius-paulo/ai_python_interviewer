@@ -5,7 +5,7 @@ from src.config import settings
 from src.bot.handlers import register_handlers
 from src.db import db, models
 from loguru import logger
-from src.health_check.checker import setup_scheduler
+from src.health_check.checker import setup_scheduler, send_health_check
 
 
 # TODO: Нужен троттлинг на handlers
@@ -50,9 +50,17 @@ async def main():
         setup_scheduler(bot)
         logger.info('Планировщик задач запущен')
 
-        # Запускаем бота
+        # Пишем админу про успешный запуск
+        await bot.send_message(settings.admin_chat_id, "Бот запущен!")
+        await send_health_check(bot)
+        logger.info('Сообщение о запуске бота отправлено')
+
+        # Запускаем поллинг
         await dp.start_polling()
+
     finally:
+        # Пишем админу про остановку бота
+        await bot.send_message(settings.admin_chat_id, "Бот остановлен!")
         # Закрываем сессию и другие ресурсы асинхронно
         session = await bot.get_session()
         await session.close()
