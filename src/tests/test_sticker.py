@@ -22,7 +22,3 @@ async def test_send_stickers(stickers_list):
         sticker = random.choice(stickers_list)  # Получаем случайный стикер из списка
         result = await bot.send_sticker(chat_id=settings.admin_chat_id, sticker=sticker)
         assert result is not None  # Проверяем, что стикер был успешно отправлен
-
-
-
-

@@ -27,7 +27,7 @@ async def conftest_db():
     try:
         # Удаляем тестового пользователя и связанные записи
         with conftest_db.atomic():
-    # Получаем id пользователя по tg_id
+            # Получаем id пользователя по tg_id
             user_id_query = Users.select(Users.id).where(Users.tg_id == "12345678")
             # Сначала удаляем связанные подписки
             Subscriptions.delete().where(Subscriptions.user_id.in_(user_id_query)).execute()
@@ -42,4 +42,4 @@ async def conftest_db():
         logger.info("🗑 Тестовые данные удалены")
     except Exception as e:
         logger.error(f"❌ Ошибка при очистке тестовых данных: {e}")
-    #TODO: Тесты проходят, но  в конце падают с RuntimeError: Event loop is closed. Исправить
+    # TODO: Тесты проходят, но  в конце падают с RuntimeError: Event loop is closed. Исправить

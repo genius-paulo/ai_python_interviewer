@@ -31,6 +31,8 @@ class Commands:
     cancel_command = 'cancel'
     cancel_text = '🙅Отмена'
 
+    check_command = 'check'
+
 
 class Modes(BaseModel):
     all: str = 'all'

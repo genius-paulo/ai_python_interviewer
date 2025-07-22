@@ -26,6 +26,8 @@ from src.db import db
 from src.bot import utils
 from src.db.cache.cache import cache
 
+from src.health_check.checker import send_health_check
+
 
 async def start(message: types.Message, state: FSMContext):
     """Отправляем стартовое сообщение"""
@@ -36,7 +38,7 @@ async def start(message: types.Message, state: FSMContext):
     logger.info(f'Пользователь c Telegram ID {message.from_user.id} создан')
 
     await message.bot.send_message(chat_id=settings.admin_chat_id,
-                                   text=f'❗️ Новый пользователь {message.from_user.username}!')
+                                   text=f'❗️ Новый пользователь @{message.from_user.username}!')
 
     final_text = actual_texts.greeting.format(user_id=message.from_user.first_name) + actual_texts.all_commands
     await message.answer(text=final_text, reply_markup=await main_keyboard())
@@ -367,6 +369,15 @@ async def get_paid_hint(callback_query: types.CallbackQuery, user_is_paid: bool)
                                            reply_markup=inline_keyboard)
 
 
+async def get_health_check(message: types.Message) -> None:
+    """Получаем статусы бота по запросу"""
+    if message.from_user.id == settings.admin_chat_id:
+        logger.info('Юзер – админ, отправляем health check')
+        await send_health_check(message.bot)
+    else:
+        logger.info(f'Юзер ({message.from_user.id}) запросил health check, НЕ отправляем health check  (не админ)')
+
+
 async def register_handlers(dp: Dispatcher):
     """Регистрируем хэндлеры"""
     # Хэндлеры старта и отмены
@@ -406,6 +417,9 @@ async def register_handlers(dp: Dispatcher):
     dp.register_pre_checkout_query_handler(process_pre_checkout_query)
     dp.register_message_handler(process_successful_payment, content_types=ContentType.SUCCESSFUL_PAYMENT,
                                 state=PaymentStates.waiting_for_payment)
+
+    # Хэндлеры для получения статуса бота
+    dp.register_message_handler(get_health_check, commands=[Commands.check_command])
 
 
 if __name__ == '__main__':
