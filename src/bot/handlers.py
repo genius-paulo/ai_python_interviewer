@@ -35,6 +35,9 @@ async def start(message: types.Message, state: FSMContext):
     await db.create_user(message.from_user.id)
     logger.info(f'Пользователь c Telegram ID {message.from_user.id} создан')
 
+    await message.bot.send_message(chat_id=settings.admin_chat_id,
+                                   text=f'❗️ Новый пользователь {message.from_user.username}!')
+
     final_text = actual_texts.greeting.format(user_id=message.from_user.first_name) + actual_texts.all_commands
     await message.answer(text=final_text, reply_markup=await main_keyboard())
 
@@ -298,8 +301,9 @@ async def get_profile(message: types.Message):
     except Exception as e:
         # TODO: Подумать над  одной точкой обработки ошибок в Redis. Так работает, но никуда не годится
         await message.bot.send_message(chat_id=settings.admin_chat_id,
-                                       text=f"У пользователя @{message.from_user.username} (id: {message.from_user.id}"
-                                            f" проблемы с кэшем: {e}")
+                                       text=f"🆘 Пользователь @{message.from_user.username} не смог получить "
+                                            f"изображение из кэша: {e}."
+                                            f"\n\nЗаново генерируем  изображение и отправляем так.")
 
     # Создаем текст сообщения
     final_text = actual_texts.profile.format(average_score=average_score,
@@ -325,8 +329,8 @@ async def get_profile(message: types.Message):
             await cache.set(image_cache_key, file_id)
         except Exception as e:
             await message.bot.send_message(chat_id=settings.admin_chat_id,
-                                           text=f"У пользователя @{message.from_user.username} (id: {message.from_user.id}"
-                                                f" проблемы с кэшем: {e}")
+                                           text=f"🆘 Пользователь @{message.from_user.username} не смог "
+                                                f"сохранить изображение в кэш: {e}.")
     else:
         logger.debug(f"Отправляем кэш карты навыков: {file_id.decode('utf-8')}")
         # Отправляем файл пользователю
