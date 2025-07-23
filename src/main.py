@@ -53,7 +53,6 @@ async def main():
         # Пишем админу про успешный запуск
         await bot.send_message(settings.admin_chat_id, "Бот запущен!")
         await send_health_check(bot)
-        logger.info('Сообщение о запуске бота отправлено')
 
         # Запускаем поллинг
         await dp.start_polling()

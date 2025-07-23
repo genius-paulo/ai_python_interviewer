@@ -15,17 +15,29 @@ services:
     hostname: ${DB_HOST}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
 
   redis:
     image: redis:7-alpine
     container_name: redis
+    command: [
+      "redis-server",
+      "--requirepass", "${REDIS_PASSWORD}",
+      "--replicaof", "no", "one",
+      "--bind", "redis 127.0.0.1",  # Разрешаем подключения по имени контейнера и localhost
+      "--protected-mode", "no",     # Отключаем для внутренней сети
+      "--save", ""                 # Отключаем сохранение на диск (если не нужно)
+    ]
+    user: "redis"
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
+      - "127.0.0.1:6379:6379"      # Доступ только с хоста
     environment:
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_COUNT_DB: ${REDIS_COUNT_DB}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - redisdata:/data
+    networks:
+      - backend
 
   app:
     build:
@@ -41,49 +53,13 @@ services:
       - redis
     volumes:
       - ./src:/app/src
+    networks:
+      - backend
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9091:9090"  # Изменяем внешний порт с 9090 на 9091
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    depends_on:
-      - pgdb
-      - redis
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-
-  postgres_exporter:
-    image: bitnami/postgres-exporter:latest
-    container_name: postgres_exporter
-    environment:
-      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@pgdb:5432/${DB_NAME}"
-    ports:
-      - "9187:9187"
-    depends_on:
-      - pgdb
-
-  redis_exporter:
-    image: oliver006/redis_exporter:latest
-    container_name: redis_exporter
-    environment:
-      REDIS_ADDR: "redis:${REDIS_PORT}"
-    ports:
-      - "9121:9121"
-    depends_on:
-      - redis
+networks:
+  backend:
+    driver: bridge
+    internal: false  # Разрешаем доступ между контейнерами
 
 volumes:
   pgdata:

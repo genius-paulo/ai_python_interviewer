@@ -39,6 +39,7 @@ class Settings(BaseSettingsWithConfig):
     db_host: str
 
     # Креды Redis
+    redis_password: str
     redis_host: str
     redis_port: int
     redis_count_db: str

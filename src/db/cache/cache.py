@@ -6,6 +6,7 @@ import asyncio
 class CacheClient:
     def __init__(self, host: str, port: int, db: str):
         self.redis = Redis(host=host,
+                           password=settings.redis_password,
                            port=port,
                            db=db)
 
