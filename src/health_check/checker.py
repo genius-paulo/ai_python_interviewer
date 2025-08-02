@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pytz import timezone
-from src.giga_chat import giga_chat
+from src.ai import ai_interviewer
 from src.db.cache import cache
 from loguru import logger
 from src.config import settings
@@ -25,7 +25,8 @@ async def send_health_check(bot: Bot):
 
     # Проверяем GigaChat
     try:
-        answer = await giga_chat.get_assessment_of_answer("Ты работаешь? Напиши: да или нет")
+        interviewer = ai_interviewer.interviewer("Ты работаешь? Напиши: да или нет")
+        answer = await interviewer.generate_answer()
         logger.info("GigaChat работает корректно")
         status.append(f"✅ GigaChat работает: '{answer}'")
     except Exception as e:

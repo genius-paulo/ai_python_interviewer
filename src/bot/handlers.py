@@ -6,8 +6,8 @@ from aiogram.dispatcher.filters import Text
 from aiogram.types.message import ContentType
 
 from src.bot.states import Form, PaymentStates
-from src.giga_chat.models import MiddlePythonInterviewerChat
-from src.giga_chat import giga_chat
+from src.ai.models import MiddlePythonInterviewerChat
+from src.ai import ai_interviewer
 from src.bot.keyboards import (main_keyboard,
                                question_keyboard,
                                get_answer_keyboard,
@@ -17,6 +17,7 @@ from src.bot.keyboards import (main_keyboard,
 from src.bot.bot_content.basics import Commands
 from src.bot.bot_content.skills import Skills
 from src.bot.bot_content.texts import actual_texts
+from src.billing import invoice
 
 from aiogram.utils.markdown import hspoiler
 from src.bot import keyboards
@@ -138,9 +139,8 @@ async def process_question(message: types.Message, state: FSMContext):
                         f'{message.from_user.username} ({message.from_user.id})')
 
             # Получаем оценку ответа от нейросети
-            # TODO: Функция иногда отдает ошибку,
-            #  тогда юзер получает понижение, нужно исправить
-            ai_answer = await giga_chat.get_assessment_of_answer(final_prompt)
+            interviewer = ai_interviewer.interviewer(final_prompt)
+            ai_answer = await interviewer.assess_answer()
             # Рассчитываем экспоненциальное сглаживание,
             # получаем финальную оценку, чтобы именно ее вставить в базу
             ai_answer_score = utils.parse_score_from_ai_answer(ai_answer)
@@ -188,11 +188,11 @@ async def start_payment(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
 
     # Создаем объект платежа и отправляем его
-    invoice = giga_chat.XTRInvoiceOneMonth(
+    xtr_invoice = invoice.XTRInvoiceOneMonth(
         chat_id=message.from_user.id,
         payload=f'user_{user_id}'
     )
-    result = await invoice.send(message.bot)
+    result = await xtr_invoice.send(message.bot)
     logger.info(f'Платеж отправлен: {result}')
 
 
@@ -351,7 +351,8 @@ async def get_paid_hint(callback_query: types.CallbackQuery, user_is_paid: bool)
     if user_is_paid:
 
         # Отправляем текст вопроса на нейросеть и получаем ответ
-        answer_text = await giga_chat.get_answer_the_question(question_text)
+        interviewer = ai_interviewer.interviewer(question_text)
+        answer_text = await interviewer.generate_answer()
         # Дополняем исходное сообщение ответом от нейросети
         final_text = f'<b>{question_text}</b>' + hspoiler('\n\n' + f'{answer_text}')
         # Клавиатуру оставляем пустой

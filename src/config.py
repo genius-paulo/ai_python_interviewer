@@ -27,6 +27,8 @@ class Settings(BaseSettingsWithConfig):
     alpha_coefficient: float
     max_request_attempts: int = 5
 
+    deepseek_api_token: str
+
     # Креды Telegram
     tg_token: str
     admin_chat_id: int
