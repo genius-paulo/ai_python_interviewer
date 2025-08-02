@@ -31,6 +31,7 @@ redis = "^5.2.1"
 aioredis = "^2.0.1"
 certifi = "^2024.12.14"
 apscheduler = "^3.11.0"
+openai = "^1.98.0"
 
 
 [build-system]
